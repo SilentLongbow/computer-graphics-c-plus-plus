@@ -1,0 +1,11 @@
+#ignore all build directories
+*-Desktop-Default
+
+#ignore user files
+*.user
+
+#ignore all PDFs
+*.pdf
+
+#ignore all zip files
+*.zip
