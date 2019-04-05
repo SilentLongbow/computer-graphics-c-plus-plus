@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(lab1)
+project(assignment)
 
 add_executable(AlienInvasion.out AlienInvasion.cpp)
 
