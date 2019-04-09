@@ -181,7 +181,7 @@ void initialize(void)
 	q = gluNewQuadric();
 
     glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+    //glEnable(GL_LIGHT0);
 
 
 //	Define light's ambient, diffuse, specular properties

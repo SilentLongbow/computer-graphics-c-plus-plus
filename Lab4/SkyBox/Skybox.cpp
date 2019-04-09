@@ -77,7 +77,7 @@ void skybox(){
 
   ////////////////////// LEFT WALL ///////////////////////
   glBindTexture(GL_TEXTURE_2D, texId[0]);
-  //glColor3f(1, 0, 0);    //<<<<<<<<<<<< Remove the statements that assign color to the sides of the cube
+  glColor3f(1, 0, 0);    //<<<<<<<<<<<< Remove the statements that assign color to the sides of the cube
   glBegin(GL_QUADS);
   glTexCoord2f(0.0, 0.0);       glVertex3f(-1000,  0, 1000);
   glTexCoord2f(1.0, 0.0);       glVertex3f(-1000, 0, -1000);
@@ -141,7 +141,7 @@ void skybox(){
 //---------------------------------------------------------------------
 void initialise(void) 
 {
-   loadGLTextures();   //<<<<<<<<< Uncomment this statement
+    //loadGLTextures();   //<<<<<<<<< Uncomment this statement
 
 	glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
