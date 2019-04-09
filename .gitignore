@@ -9,3 +9,6 @@
 
 #ignore all zip files
 *.zip
+
+# all .jpg images
+*.jpg
