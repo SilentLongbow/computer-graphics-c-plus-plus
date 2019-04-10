@@ -17,12 +17,33 @@ using namespace std;
 GLuint txId[9];   //Texture ids
 float look_x, look_y, look_z; // Point that camera looks at. Values calcualed in special
 float eye_x = 0, eye_y = 0, eye_z = 0;  // Position of camera
+
 float angle = M_PI;
+float strutAngle = 6.0; // The angle that the undercarriage strut is at against the y-axix
+float footAngle = 0.0; // The angle of the undercarriage foot against the z-axis
+float undercarriageAngle = 0.0; // Angle of the total undercarriage, used to fold it into the ship
+bool renderFoot = true;
+bool renderUndercarriage = true;
+
+bool takeOff = false;
+float shipHeight = 0.0;
+float ship_z = 0.0;
+float shipAngle = 0.0; // Angle of rotation of the ship around the y-axis
+bool renderShip = true;
+
+float radarAngle = 0.0; // Angle of rotation of the radar system around the y-axis
+
+float bulbAngle = 0.0; // The angle of revolution of the bulbs on the ship around the y-axis
+
+int bulbTick = 0; // Counter to determine when the switch the bulb positions
+
 float black[4] = {0.0, 0.0, 0.0, 1.0};
 float grey[4] = {0.2, 0.2, 0.2, 1.0};   // Ambient value
 float white[4]  = {1.0, 1.0, 1.0, 1.0}; // Specular and diffuse value
+
 float sunPos[4];
-bool render = false;
+
+GLUquadricObj* q;
 
 //--------------------------------------------------------------------------------
 
@@ -119,6 +140,7 @@ void initialise()
 {
 
     loadTexture();
+    q =  gluNewQuadric();
 
     glEnable(GL_TEXTURE_2D);
 
@@ -606,23 +628,26 @@ void tower()
 
 void castleTowers()
 {
+
+    ////////////////////// FRONT RIGHT TOWER ///////////////////////
     glPushMatrix();
         glTranslatef(15.5, 0.0, 15.5);
         tower();
     glPopMatrix();
 
+    ////////////////////// FRONT LEFT TOWER ///////////////////////
     glPushMatrix();
         glTranslatef(-15.5, 0.0, 15.5);
         tower();
     glPopMatrix();
 
-
+    ////////////////////// BACK LEFT TOWER ///////////////////////
     glPushMatrix();
         glTranslatef(-15.5, 0.0, -15.5);
         tower();
     glPopMatrix();
 
-
+    ////////////////////// BACK RIGHT TOWER ///////////////////////
     glPushMatrix();
         glTranslatef(15.5, 0.0, -15.5);
         tower();
@@ -632,25 +657,78 @@ void castleTowers()
 }
 //--------------------------------------------------------------------------------
 
-void ship()
+void radarAntenna()
+{
+    glDisable(GL_TEXTURE_2D);
+    glColor3f(35.0/255.0, 64.0/255.0, 152.0/255.0);
+    gluCylinder(q, 0.1, 0.1, 1, 10, 10);
+    glPushMatrix();
+
+        ////////////////////// TOP SENSOR ///////////////////////
+        glScalef(1.0, 4.0, 1.0);
+
+        glColor3f(204.0/255.0, 152.0/255.0, 20.0/255.0);
+        glMaterialfv(GL_FRONT, GL_SPECULAR, black); // Make top matte
+        glutSolidCube(0.2);
+        glMaterialfv(GL_FRONT, GL_SPECULAR, white); // Restore specular colour
+
+    glPopMatrix();
+    glEnable(GL_TEXTURE_2D);
+}
+
+//--------------------------------------------------------------------------------
+
+void sensors()
+{
+    glPushMatrix();
+        glRotatef(radarAngle, 0.0, 1.0, 0.0);
+        glTranslatef(0.0, -0.7, 0.0);
+        glRotatef(-90, 1.0, 0.0, 0.0);
+        radarAntenna();
+    glPopMatrix();
+}
+
+//--------------------------------------------------------------------------------
+
+void shipHull()
 {
     // Vertices go from bottom to top
-    int N = 26;
-    float angStep = 10.0*3.1415926/180.0;  //Rotate in 10 deg steps (converted to radians)
-    float vx[N] = {0.1, 0.1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.5, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4,
-                   0.4, 0.4, 0.4, 0.38, 0.35, 0.32, 0.3, 0.25, 0.2, 0.1, 0.0};
-    float vy[N] = {0.0, 0.1, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9,
-                  1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0};
+    int N = 59;
+    float angStep = 2.5 * M_PI / 180.0;  //Rotate in 5 deg steps (converted to radians)
+
+    float vx[N] = {0.0, 0.05, 0.1, 0.175, 0.22, 0.26, 0.297, 0.3, 0.3, 0.3, 0.34, 0.4, 0.45, 0.5, 0.6, 0.7,
+                   0.8, 0.92, 1.05, 1.1, 1.22, 1.28, 1.38, 1.5, 1.6, 1.7, 1.76, 1.805, 1.836, 1.836,
+                   1.79, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.76, 0.7, 0.6, 0.5, 0.46, 0.46,
+                   0.45, 0.44, 0.43, 0.4, 0.35, 0.3, 0.28, 0.2, 0.15 ,0.1 ,0.05, 0.0};
+    float vy[N] = {0.0, 0.01, 0.02, 0.04, 0.06, 0.08, 0.11, 0.13, 0.15, 0.15, 0.16, 0.175, 0.178, 0.19, 0.2,
+                   0.22, 0.24, 0.25, 0.258, 0.27, 0.28, 0.285, 0.29, 0.3, 0.31, 0.315, 0.32, 0.34, 0.35,
+                   0.37, 0.387, 0.395, 0.4, 0.4, 0.4, 0.4, 0.405, 0.41, 0.42, 0.43, 0.445, 0.45, 0.46,
+                   0.48, 0.49, 0.5, 0.5, 0.55, 0.6, 0.62, 0.633, 0.675, 0.7, 0.72, 0.75, 0.76, 0.787, 0.795, 0.8};
     float vz[N] = {0};
 
     float wx[N];
     float wy[N];
     float wz[N];
 
-    glColor3f(0.9, 0.0, 0.0);
-    for (int j = 0; j < 36; j++) {
+    float ufoGrey = 45.0/255.0;
+    float ufoSilerDisk = 211.0/255.0;
+    float ufoSilverBridge = 125.0/255.0;
+    glDisable(GL_TEXTURE_2D);
+    for (int j = 0; j < 144; j++) {
         glBegin(GL_TRIANGLE_STRIP);
         for(int i = 0; i < N; i++) {
+            if (i < 9)
+            {
+                glMaterialfv(GL_FRONT, GL_SPECULAR, black); // SPECULAR colour
+                glColor3f(ufoGrey, ufoGrey, ufoGrey); // Life support grey
+            }
+            else if (i < 47)
+            {
+                glMaterialfv(GL_FRONT, GL_SPECULAR, white); // SPECULAR colour
+                glColor3f(ufoSilerDisk, ufoSilerDisk, ufoSilerDisk); // Silver for disk
+            }
+            else glColor3f(ufoSilverBridge, ufoSilverBridge, ufoSilverBridge); // Silver for bridge
+
             wx[i] = (vx[i] * cos(angStep)) + (vz[i] * sin(angStep));
             wy[i] = vy[i];
             wz[i] = (-vx[i] * sin(angStep)) + (vz[i] * cos(angStep));
@@ -667,6 +745,172 @@ void ship()
         }
         glEnd();
     }
+    glEnable(GL_TEXTURE_2D);
+}
+//--------------------------------------------------------------------------------
+
+void landingStrut()
+{
+    float strutLength = 1.45;
+
+    glPushMatrix();
+        glTranslatef(0.0, -0.27 + 0.8, -1.5);
+        glRotatef(undercarriageAngle, 1.0, 0.0, 0.0);
+        glTranslatef(0.0, -0.8, 0.0);
+
+        if (renderFoot)
+        {
+            // Set up the foot
+            glPushMatrix();
+            glTranslatef(0.0, -0.68, -0.3);
+            glRotatef(-35, 1.0, 0.0, 0.0);
+            glScalef(0.1, 0.1, 0.4);
+            glutSolidCube(1);
+            glPopMatrix();
+        }
+
+        // Set up the landing gear strut
+        glPushMatrix();
+            glTranslatef(0.0, 0.8, 0.0);
+            glRotatef(strutAngle + 90, 1.0, 0.0, 0.0);
+            glScalef(0.1, 0.1, strutLength);
+            gluCylinder(q, 0.5, 0.5, 1.0, 20, 20);
+        glPopMatrix();
+    glPopMatrix();
+}
+
+//--------------------------------------------------------------------------------
+
+void shipUndercarriage()
+{
+    landingStrut();
+    glPushMatrix();
+        glRotatef(120, 0.0, 1.0, 0.0);
+        landingStrut();
+    glPopMatrix();
+    glPushMatrix();
+        glRotatef(240, 0.0, 1.0, 0.0);
+        landingStrut();
+    glPopMatrix();
+}
+
+//--------------------------------------------------------------------------------
+
+void redBulb()
+{
+
+    glColor3f(1.0, 0.0, 0.0);
+    glPushMatrix();
+        glTranslatef(0.0, 0.0, 1.0);
+        gluSphere(q, 0.05, 20, 20);
+    glPopMatrix();
+
+}
+
+//--------------------------------------------------------------------------------
+
+void blueBulb()
+{
+
+    glColor3f(0.0, 1.0, 1.0);
+    glPushMatrix();
+        glRotatef(45, 0.0, 1.0, 0.0);
+        glTranslatef(0.0, 0.0, 1.0);
+        gluSphere(q, 0.05, 20, 20);
+    glPopMatrix();
+
+
+}
+
+//--------------------------------------------------------------------------------
+
+void shipBulbs()
+{
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+
+    ////////////////////// TOP RED BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle, 0.0, 1.0, 0.0);
+        redBulb();
+    glPopMatrix();
+
+    ////////////////////// RIGHT RED BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle + 90, 0.0, 1.0, 0.0);
+        redBulb();
+    glPopMatrix();
+
+    ////////////////////// BOTTOM RED BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle + 180, 0.0, 1.0, 0.0);
+        redBulb();
+    glPopMatrix();
+
+    ////////////////////// LEFT RED BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle - 90, 0.0, 1.0, 0.0);
+        redBulb();
+    glPopMatrix();
+
+    ////////////////////// FRONT LEFT BLUE BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle, 0.0, 1.0, 0.0);
+        blueBulb();
+    glPopMatrix();
+
+    ////////////////////// FRONT RIGHT BLUE BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle + 90, 0.0, 1.0, 0.0);
+        blueBulb();
+    glPopMatrix();
+
+    ////////////////////// BACK RIGHT BLUE BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle + 180, 0.0, 1.0, 0.0);
+        blueBulb();
+    glPopMatrix();
+
+    ////////////////////// BACK LEFT BLUE BULB ///////////////////////
+    glPushMatrix();
+        glRotatef(bulbAngle - 90, 0.0, 1.0, 0.0);
+        blueBulb();
+    glPopMatrix();
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_LIGHTING);
+}
+
+//--------------------------------------------------------------------------------
+
+
+void ship()
+{
+    glPushMatrix();
+        glTranslatef(0.0, shipHeight, ship_z); // Move whole unit
+        glRotatef(shipAngle, 0.0, 1.0, 0.0); // Rotate ship
+
+        // Flashing Bulbs on top
+        glPushMatrix();
+            glTranslatef(0.0, 0.85, 0.0);
+            glScalef(2.0, 2.0, 2.0);
+            shipBulbs();
+        glPopMatrix();
+
+        // Flashing Bulbs on bottom
+        glPushMatrix();
+            glTranslatef(0.0, 0.378, 0.0);
+            shipBulbs();
+        glPopMatrix();
+
+        // Generate hull
+        glPushMatrix();
+            glScalef(2.0, 2.0, 2.0);
+            shipHull();
+        glPopMatrix();
+    if (renderUndercarriage) shipUndercarriage(); // Undercarriage
+    sensors(); // Sensors
+    glPopMatrix();
 }
 
 //--------------------------------------------------------------------------------
@@ -690,10 +934,82 @@ void display()
     ground();
     castleWalls();
     castleTowers();
-    ship();
-
+    if (renderShip) ship();
     glutPostRedisplay();
     glutSwapBuffers();
+}
+
+//--------------------------------------------------------------------------------
+
+void timerFunction(int value)
+{
+    bulbTick += 1;
+    if (bulbTick >= 19) { // Alternates bulbs at approximately 0.5s
+        bulbAngle += 45.0;
+        if (bulbAngle == 360.0) bulbAngle = 0.0;
+        bulbTick = 0;
+    }
+
+    radarAngle += 10;
+    if (radarAngle > 359.0) radarAngle = 0.0;
+
+    if (renderShip && takeOff) {
+        // Slowly rise to 3 units height to raise gear
+        if (shipHeight < 4)
+        {
+            shipHeight += 0.01;
+        }
+
+        // Rotate ship once off ground
+        if (shipHeight > 0.5)
+        {
+            shipAngle += 1;
+            if (shipAngle > 359.0) shipAngle = 0.0;
+        }
+
+        // Rotate landing foot
+        if (footAngle > -36)
+        {
+            footAngle -= 0.5;
+        }
+
+        // If foot at edge of movement limits, stop rendering it
+        if (undercarriageAngle > 82)
+        {
+            renderFoot = false;
+        }
+
+        // Rotate undercarriage
+        if (undercarriageAngle < 90)
+        {
+            undercarriageAngle += 0.5;
+        }
+        // Gear up, start moving
+        else if (shipHeight < 30.0)
+        {
+            shipHeight += 0.1;
+        }
+
+        if (undercarriageAngle >= 90) {
+            renderUndercarriage = false;
+        }
+
+        // If at correct elevation, start moving forwards!
+        if (shipHeight >= 30.0)
+        {
+            ship_z += 0.5;
+        }
+
+        // When ship past skybox, stop rendering it
+        if (ship_z > 210)
+        {
+            renderShip = false;
+        }
+
+
+    }
+    glutPostRedisplay();
+    glutTimerFunc(25, timerFunction, 0);
 }
 
 //--------------------------------------------------------------------------------
@@ -834,11 +1150,10 @@ void keyboard(unsigned char key, int x, int y)
     } else if (key == 'c')
     {
         // go down
-        if (eye_y > 0) eye_y -= 0.1;
-    } else if (key == 'r')
+        eye_y -= 0.1;
+    } else if (key == 's')
     {
-        // render towers
-        render = !render;
+        takeOff = true;
     }
     look_x = eye_x + 100 * sin(angle);
     look_y = eye_y;
@@ -855,11 +1170,11 @@ void special(int key, int x, int y)
     if (key == GLUT_KEY_LEFT)
     {
         // Look right
-        angle -= 0.1;
+        angle -= 5 * M_PI / 180; // 5 Degrees
     } else if (key == GLUT_KEY_RIGHT)
     {
         // look left
-        angle += 0.1;
+        angle += 5 * M_PI / 180; // 5 Degrees
     }
     else if (key == GLUT_KEY_UP)
     {
@@ -901,10 +1216,10 @@ int main(int argc, char** argv)
 
     glutCreateWindow("Alien Invasion");
     initialise();
-
     glutDisplayFunc(display);
     glutSpecialFunc(special);
     glutKeyboardFunc(keyboard);
+    glutTimerFunc(25, timerFunction, 0);
 
     glutMainLoop();
     return 0;
