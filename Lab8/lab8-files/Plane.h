@@ -10,7 +10,7 @@
 #define H_PLANE
 
 #include <glm/glm.hpp>
-#include "SceneObject.h"
+#include "../lab7-files/SceneObject.h"
 
 class Plane : public SceneObject
 {
