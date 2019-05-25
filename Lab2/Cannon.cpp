@@ -193,18 +193,19 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	gluLookAt(0, cam_hgt, 200, 0, 0, 0, 0, 1, 0);
+    gluLookAt(0, cam_hgt, 200, 0, 0, 0, 0, 1, 0);
 	glLightfv(GL_LIGHT0, GL_POSITION, lpos);   //set light position
 
     glRotatef(angle, 0.0, 1.0, 0.0);		//rotate the whole scene
 
 	drawFloor();
 
+    //glScalef(0.5, 0.5, 0.5);
     // Rotates the cannon then draws it
     glPushMatrix();
-        glTranslatef(-20, 30, 0);
-        glRotatef(30, 0, 0, 1);
-        glTranslatef(20, -30, 0);
+        //glTranslatef(-20, 30, 0);
+        //glRotatef(30, 0, 0, 1);
+        //glTranslatef(20, -30, 0);
         drawCannon();
     glPopMatrix();
 

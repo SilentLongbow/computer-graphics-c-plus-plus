@@ -81,7 +81,7 @@ void special(int key, int x, int y)
 //--Increments theta at intervals of 50ms --------
 void myTimer(int value)
 {
-    theta ++;
+    theta += 5;
     glutPostRedisplay();
     glutTimerFunc(50, myTimer, 0);
 }
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	initialize();
 	glutDisplayFunc(display);
     glutSpecialFunc(special);
-    glutTimerFunc(50, myTimer, 0);
+    glutTimerFunc(100/6, myTimer, 0);
 	glutMainLoop();
 	return 0; 
 }

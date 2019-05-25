@@ -37,25 +37,16 @@ void loadTexture()
 //--------------------------------------------------------------------------------
 
 void detectCollision() {
-    if (eye_x > 14.0 && eye_z > 14.0) {
+    if (eye_x > 14.0) {
         eye_x = 14.0;
-        eye_z = 14.0;
-    } else if (eye_x > 14.0 && eye_z < -14.0) {
-        eye_x = 14.0;
-        eye_z = -14.0;
-    } else if (eye_x < -14.0 && eye_z > 14.0) {
+    }
+    if (eye_x < -14.0) {
         eye_x = -14.0;
+    }
+    if (eye_z > 14.0) {
         eye_z = 14.0;
-    } else if (eye_x < -14.0 && eye_z < -14.0) {
-        eye_x = -14.0;
-        eye_z = -14.0;
-    }else if (eye_x > 14.0) {
-        eye_x = 14.0;
-    } else if (eye_x < -14.0) {
-        eye_x = -14.0;
-    } else if (eye_z > 14.0) {
-        eye_z = 14.0;
-    } else if (eye_z < -14.0) {
+    }
+    if (eye_z < -14.0) {
         eye_z = -14.0;
     }
 }
