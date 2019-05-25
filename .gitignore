@@ -3,6 +3,7 @@
 
 #ignore user files
 *.user
+.idea
 
 #ignore all PDFs
 *.pdf
@@ -10,5 +11,7 @@
 #ignore all zip files
 *.zip
 
-# all .jpg images
+# all images
 *.jpg
+*.jpeg
+*.png
