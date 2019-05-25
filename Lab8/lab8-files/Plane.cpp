@@ -17,10 +17,23 @@
 */
 bool Plane::isInside(glm::vec3 pt)
 {
+    // Get all the cross products between vectors which make the edges of the plane and the point from each corner
 
-	//=== Complete this function ====
-	
-	return true;
+    glm::vec3 aCross = glm::cross(b - a, pt - a);
+    glm::vec3 bCross = glm::cross(c - b, pt - b);
+    glm::vec3 cCross = glm::cross(d - c, pt - c);
+    glm::vec3 dCross = glm::cross(a - d, pt - d);
+
+    glm::vec3 normal = this->normal(pt);
+
+    // Perform the dot product on each resultant cross product.
+    float aDot = glm::dot(aCross, normal);
+    float bDot = glm::dot(bCross, normal);
+    float cDot = glm::dot(cCross, normal);
+    float dDot = glm::dot(dCross, normal);
+
+    // If all the dot products are positive, return true, else return false.
+    return (aDot > 0 && bDot > 0 && cDot > 0 && dDot > 0);
 }
 
 /**
@@ -47,12 +60,10 @@ float Plane::intersect(glm::vec3 posn, glm::vec3 dir)
 */
 glm::vec3 Plane::normal(glm::vec3 pt)
 {
-	glm::vec3 n = glm::vec3(0);
+	glm::vec3 bMinusA = b - a;
+	glm::vec3 dMinusA = d - a;
 
-	//=== Complete this function ====
-
-    return n;
+	glm::vec3 normal = glm::cross(bMinusA, dMinusA);   // Get the cross product
+    normal = glm::normalize(normal);                    // Normalise it
+    return normal;
 }
-
-
-

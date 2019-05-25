@@ -11,6 +11,7 @@
 #include "Sphere.h"
 #include "SceneObject.h"
 #include "Ray.h"
+#include "../lab8-files/Plane.h"
 #include <GL/glut.h>
 using namespace std;
 
@@ -143,11 +144,17 @@ void initialize()
     Sphere *sphere1 = new Sphere(glm::vec3(0.0, 0.0, -100.0), 5.0, glm::vec3(0, 0, 1));
     Sphere *sphere2 = new Sphere(glm::vec3(-50.0, 0.0, -50.0), 10, glm::vec3(0, 1, 0));
     Sphere *sphere3 = new Sphere(glm::vec3(20.0, 0.0, -90.0), 10.0, glm::vec3(1, 0, 0));
+    Plane *plane = new Plane (glm::vec3(-20., -20, -40),    //Point A
+                              glm::vec3(20., -20, -40),     //Point B
+                              glm::vec3(20., -20, -200),    //Point C
+                              glm::vec3(-20., -20, -200),   //Point D
+                              glm::vec3(0.5, 0.5, 0.0));      //Colour
 
-	//--Add the above to the list of scene objects.
+	//--Add the above to the list of scene objects. (.push_back is the same as append)
     sceneObjects.push_back(sphere1);
     sceneObjects.push_back(sphere2);
     sceneObjects.push_back(sphere3);
+    sceneObjects.push_back(plane);
 }
 
 
