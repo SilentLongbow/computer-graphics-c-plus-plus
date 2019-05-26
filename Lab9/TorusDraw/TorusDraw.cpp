@@ -53,7 +53,7 @@ void initialize()
 
 void update(int value)
 {
-	angle++;
+	angle-=2;
 	glutTimerFunc(50.0, update, 0);
 	glutPostRedisplay();
 }
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 
 	initialize();
 	glutDisplayFunc(display);
-	glutTimerFunc(50, update, 0); 
+	glutTimerFunc(10, update, 0);
 	glutMainLoop();
 }
 
