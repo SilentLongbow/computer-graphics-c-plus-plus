@@ -6,7 +6,9 @@
 */
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 #include <vector>
+#include <stdbool.h>
 #include <glm/glm.hpp>
 #include "scene-objects/Sphere.h"
 #include "scene-objects/SceneObject.h"
@@ -27,9 +29,20 @@ const float YMAX =  HEIGHT * 0.5;
 
 vector<SceneObject*> sceneObjects;  //A global list containing pointers to objects in the scene
 
+vector<int> reflectiveObjects;
+vector<int> transparentObjects;
+vector<int> refractiveObjects;
 
-//---The most important function in a ray tracer! ---------------------------------- 
-//   Computes the colour value obtained by tracing a ray and finding its 
+
+vector<glm::vec3> lightSources; // List of all light sources in the scene
+
+bool superSampling = false;
+//int superSamplingAmount = 2;
+
+
+
+//---The most important function in a ray tracer! ----------------------------------
+//   Computes the colour value obtained by tracing a ray and finding its
 //     closest point of intersection with objects in the scene.
 //----------------------------------------------------------------------------------
 glm::vec3 trace(Ray ray, int step)
@@ -74,15 +87,24 @@ glm::vec3 trace(Ray ray, int step)
     }
     else {
         colourSum = (ambientCol * materialCol) + (lDotn * materialCol) + specularCol;
-        if (ray.xindex == 0 && step < MAX_STEPS) { // If we're hitting the reflective object && not at max steps
-            glm::vec3 reflectedDirection = glm::reflect(ray.dir, normalVector);     // Get the direction of the reflected ray
-            Ray reflectedRay(ray.xpt, reflectedDirection);  // Create the reflected ray
-            glm::vec3 reflectedColour = trace(reflectedRay, step+1); // Recursively trace the reflected ray
-            colourSum += (0.8f * reflectedColour);  // Add the reflected ray's colour values to to rest of the display
+
+
+        vector<int>::iterator searchValue;
+        searchValue = find(reflectiveObjects.begin(), reflectiveObjects.end(), ray.xindex); // Check list of reflective objects to see if we intersect with one
+
+        if (step < MAX_STEPS) { // If not at max steps
+            if (searchValue != reflectiveObjects.end()) {
+                glm::vec3 reflectedDirection = glm::reflect(ray.dir, normalVector);     // Get the direction of the reflected ray
+                Ray reflectedRay(ray.xpt, reflectedDirection);  // Create the reflected ray
+                glm::vec3 reflectedColour = trace(reflectedRay, step+1); // Recursively trace the reflected ray
+                colourSum += (0.8f * reflectedColour);  // Add the reflected ray's colour values to to rest of the display
+            }
         }
     }
     return colourSum;
 }
+
+
 
 //---The main display module -----------------------------------------------------------
 // In a ray tracing application, it just displays the ray traced image by drawing
@@ -90,6 +112,7 @@ glm::vec3 trace(Ray ray, int step)
 //---------------------------------------------------------------------------------------
 void display()
 {
+    puts("Started Display");
 	float xp, yp;  //grid point
 	float cellX = (XMAX-XMIN)/NUMDIV;  //cell width
 	float cellY = (YMAX-YMIN)/NUMDIV;  //cell height
@@ -109,11 +132,34 @@ void display()
 		{
 			yp = YMIN + j*cellY;
 
-		    glm::vec3 dir(xp+0.5*cellX, yp+0.5*cellY, -EDIST);	//direction of the primary ray
+			glm::vec3 totalColour = glm::vec3(0.0);
+			int count = 1;
+			int step = 1;
+			float superSamplingAmount = 10.0;
+            glm::vec3 col;
 
-		    Ray ray = Ray(eye, dir);		//Create a ray originating from the camera in the direction 'dir'
-			ray.normalize();				//Normalize the direction of the ray to a unit vector
-		    glm::vec3 col = trace (ray, 1); //Trace the primary ray and get the colour value
+			if (superSampling) {
+                for(int xSubDiv = 1; xSubDiv < superSamplingAmount + 1; xSubDiv++) {
+                    float divisionHorizontal = 1.0 / superSamplingAmount / 0.5 * (float) xSubDiv;
+                    for (int ySubDiv = 1; ySubDiv < superSamplingAmount + 1; ySubDiv++) {
+                        float divisionVertical = 1.0 / superSamplingAmount / 0.5 * (float) ySubDiv;
+
+
+                        glm::vec3 dir(xp+divisionHorizontal*cellX, yp+divisionVertical*cellY, -EDIST);	//direction of the primary ray
+                        Ray ray = Ray(eye, dir);		//Create a ray originating from the camera in the direction 'dir'
+                        ray.normalize();				//Normalize the direction of the ray to a unit vector
+
+                        totalColour += trace (ray, step); //Trace the primary ray and get the colour value
+
+                    }
+                }
+                col = totalColour / (superSamplingAmount * superSamplingAmount);
+			} else {
+                glm::vec3 dir(xp+0.5*cellX, yp+0.5*cellY, -EDIST);	//direction of the primary ray
+                Ray ray = Ray(eye, dir);		//Create a ray originating from the camera in the direction 'dir'
+                ray.normalize();				//Normalize the direction of the ray to a unit vector
+                col = trace(ray, step);
+			}
 
 			glColor3f(col.r, col.g, col.b);
 			glVertex2f(xp, yp);				//Draw each cell with its color value
@@ -125,6 +171,7 @@ void display()
 
     glEnd();
     glutSwapBuffers();
+    puts("Ended Display\n");
 }
 
 
@@ -155,6 +202,30 @@ void initialize()
     sceneObjects.push_back(sphere2);
     sceneObjects.push_back(sphere3);
     sceneObjects.push_back(plane);
+
+    reflectiveObjects.push_back(0); // Give index of sphere 1 in the sceneObjects list
+}
+
+void keyboardListener(unsigned char key, int x, int y) {
+    bool keyPressed = false;
+    if (key == 'a') {
+        superSampling = !superSampling;
+        keyPressed = true;
+    } /*else if (key == '2') {
+        superSamplingAmount = 2;
+        keyPressed = true;
+    } else if (key == '3') {
+        superSamplingAmount = 3;
+        keyPressed = true;
+    } else if (key == '4') {
+        superSamplingAmount = 4;
+        keyPressed = true;
+    }*/
+
+
+    if (keyPressed) {
+        glutPostRedisplay();
+    }
 }
 
 
@@ -162,13 +233,14 @@ void initialize()
 int main(int argc, char *argv[]) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB );
-    glutInitWindowSize(600, 600);
-    glutInitWindowPosition(20, 20);
-    glutCreateWindow("Lab 8");
+    glutInitWindowSize(800, 800);
+    glutInitWindowPosition(400, 50);
+    glutCreateWindow("Assignment 2");
 
     glutDisplayFunc(display);
     initialize();
 
+    glutKeyboardFunc(keyboardListener);
     glutMainLoop();
     return 0;
 }
