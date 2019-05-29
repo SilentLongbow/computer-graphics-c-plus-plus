@@ -17,7 +17,7 @@
 #include <GL/glut.h>
 using namespace std;
 
-const float WIDTH = 20.0;  
+const float WIDTH = 20.0;
 const float HEIGHT = 20.0;
 const float EDIST = 40.0;
 const int NUMDIV = 1000;
@@ -135,7 +135,7 @@ void display()
 			glm::vec3 totalColour = glm::vec3(0.0);
 			int count = 1;
 			int step = 1;
-			float superSamplingAmount = 10.0;
+			float superSamplingAmount = 2.0;
             glm::vec3 col;
 
 			if (superSampling) {
