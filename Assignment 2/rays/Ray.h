@@ -14,27 +14,27 @@ class Ray
 {
 
 public:
-    glm::vec3 pt;	//The source point of the ray
-	glm::vec3 dir;	//The UNIT direction of the ray
-	glm::vec3 xpt;	//The closest point of intersection on the ray
-	int xindex;	//The index of the object that gives the closet point of intersection
-	float xdist;	//The distance from the source to xpt along the ray.
+    glm::vec3 source;	//The source point of the ray
+	glm::vec3 direction;	//The UNIT direction of the ray
+	glm::vec3 intersectPoint;	//The closest point of intersection on the ray
+	int intersectIndex;	//The index of the object that gives the closet point of intersection
+	float intersectDistance;	//The distance from the source to intersectPoint along the ray.
 
     Ray()
 	{
-		pt = glm::vec3(0, 0, 0);
-		dir = glm::vec3(0, 0, -1);
-		xpt = glm::vec3(0, 0, 0);
-		xindex = -1;
-		xdist = 0;
+        source = glm::vec3(0, 0, 0);
+        direction = glm::vec3(0, 0, -1);
+        intersectPoint = glm::vec3(0, 0, 0);
+        intersectIndex = -1;
+        intersectDistance = 0;
 	}	;
 	
     Ray(glm::vec3 point, glm::vec3 direction)
-		: pt(point), dir(direction)
+		: source(point), direction(direction)
 	{
-		xpt = glm::vec3(0, 0, 0);
-		xindex = -1;
-		xdist = 0;
+        intersectPoint = glm::vec3(0, 0, 0);
+        intersectIndex = -1;
+        intersectDistance = 0;
 	} ;
 
     void normalize();

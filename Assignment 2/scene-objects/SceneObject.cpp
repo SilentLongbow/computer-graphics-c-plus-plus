@@ -60,3 +60,17 @@ bool SceneObject::isTransparent() {
 void SceneObject::setTransparent() {
     transparent = true;
 }
+
+/**
+ * Returns the procedural property of the object.
+ */
+bool SceneObject::isProcedural() {
+    return procedural;
+}
+
+/**
+ * Sets the procedural property of the object to true.
+ */
+void SceneObject::setProcedural() {
+    procedural = true;
+}

@@ -9,7 +9,7 @@
 //Normalizes the direction vector of the current ray to a unit vector
 void Ray::normalize()
 {
-   dir = glm::normalize(dir);
+   direction = glm::normalize(direction);
 }
 
 //Finds the closest point of intersection of the current ray with scene objects
@@ -19,15 +19,15 @@ void Ray::closestPt(std::vector<SceneObject*> &sceneObjects)
 	float min = 1.e+6;
     for(uint i = 0;  i < sceneObjects.size();  i++)
 	{
-        float t = sceneObjects[i]->intersect(pt, dir);
+        float t = sceneObjects[i]->intersect(source, direction);
 		if(t > 0)        //Intersects the object
 		{
-			point = pt + dir*t;
+			point = source + direction*t;
 			if(t < min)
 			{
-				xpt = point;
-				xindex = i;
-				xdist = t;
+				intersectPoint = point;
+				intersectIndex = i;
+				intersectDistance = t;
 				min = t;
 			}
 		}

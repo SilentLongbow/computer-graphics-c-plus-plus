@@ -22,6 +22,7 @@ protected:
 	bool reflective = false;
 	bool refractive = false;
 	bool transparent = false;
+	bool procedural = false;
 public:
 	SceneObject() {}
     virtual float intersect(glm::vec3 pos, glm::vec3 dir) = 0;
@@ -42,6 +43,10 @@ public:
 	bool isTransparent();
 
 	void setTransparent();
+
+	bool isProcedural();
+
+	void setProcedural();
 };
 
 #endif
