@@ -17,6 +17,7 @@
 #include "scene-objects/SceneObject.h"
 #include "rays/Ray.h"
 #include "scene-objects/Plane.h"
+#include "texture-loading/TextureBMP.h"
 #include <GL/glut.h>
 using namespace std;
 
@@ -32,15 +33,11 @@ const float YMAX =  HEIGHT * 0.5;
 
 vector<SceneObject*> sceneObjects;  //A global list containing pointers to objects in the scene
 
-vector<int> reflectiveObjects;
-vector<int> transparentObjects;
-vector<int> refractiveObjects;
-
-
 vector<glm::vec3> lightSources; // List of all light sources in the scene
 
+vector<TextureBMP> sceneTextures; // List of all textures to be used
+
 bool superSampling = false;
-//int superSamplingAmount = 2;
 
 glm::vec3 calculateSpecularColour(float rDotV) {
     glm::vec3 specularColour;
@@ -63,7 +60,7 @@ glm::vec3 calculateSpecularColour(float rDotV) {
 //----------------------------------------------------------------------------------
 glm::vec3 trace(Ray ray, int step)
 {
-    glm::vec3 backgroundColour = glm::vec3(159.0, 238.0, 252.0) / 255.0f;
+    glm::vec3 backgroundColour = glm::vec3(191.0, 249.0, 254.0) / 255.0f;
     glm::vec3 ambientColour(0.2);   //Ambient color of light
 
     ray.closestPt(sceneObjects);		//Compute the closest point of intersection of objects with the ray
@@ -72,18 +69,19 @@ glm::vec3 trace(Ray ray, int step)
 
     glm::vec3 materialCol;
 
-    if (sceneObjects[objectId]->isProcedural()) {
 
+    /* If the scene object has a procedural property, perform procedural texture generation */
+    if (sceneObjects[objectId]->isProcedural() && step < MAX_STEPS) {
 
-
+        /* Following code was based off the code given on  http://math.hws.edu/ */
         float scale = 0.1;
         float a = floor(ray.intersectPoint.x * scale);
         float b = floor(ray.intersectPoint.z * scale);
         if (glm::mod(a+b, 2.0f) < 0.5) {  // a+b is odd
-            materialCol = glm::vec3(0.0, 0.0, 0.0); // pink
+            materialCol = glm::vec3(.2, .2, .2);// / 255.0f; // Black
         }
         else {  // a+b is even
-            materialCol = glm::vec3(0.7, 0.7, 0.7); // light blue
+            materialCol = glm::vec3(0.5, 0.5, 0.5); // Grey
         }
 
 
@@ -114,7 +112,7 @@ glm::vec3 trace(Ray ray, int step)
         glm::vec3 specularColour = calculateSpecularColour(rDotV);
 
 
-        if (lDotn <= 0) {   // If dot product between normal and light is 0 or less -> In shadow
+        if (lDotn < 0) {   // If dot product between normal and light is 0 or less -> In shadow
             colourSum += ambientColour * materialCol;
         } else if (shadow.intersectIndex > -1 && shadow.intersectDistance < distance(currentLight, shadow.intersectPoint)) {  // If shadow secondary ray hits an object before reading light source
             colourSum += ambientColour * materialCol;
@@ -123,11 +121,44 @@ glm::vec3 trace(Ray ray, int step)
             colourSum += (ambientColour * materialCol) + (lDotn * materialCol) + specularColour;
         }
     }
-    if (sceneObjects[objectId]->isReflective()) {
+    if (sceneObjects[objectId]->isReflective() && step < MAX_STEPS) {
+        float factor = sceneObjects[objectId]->getReflectiveFactor();
         glm::vec3 reflectedDirection = glm::reflect(ray.direction, normalVector);     // Get the direction of the reflected ray
         Ray reflectedRay(ray.intersectPoint, reflectedDirection);  // Create the reflected ray
         glm::vec3 reflectedColour = trace(reflectedRay, step+1); // Recursively trace the reflected ray
-        colourSum += (0.4f * reflectedColour);  // Add the reflected ray's colour values to to rest of the display
+        colourSum += (factor * reflectedColour);  // Add the reflected ray's colour values to to rest of the display
+    }
+
+    if (sceneObjects[objectId]->isRefractive() && step < MAX_STEPS) {
+
+        float refractiveIndex = sceneObjects[objectId]->getRefractiveIndex();   // Get refractive index of the object
+        glm::vec3 insideRayDirection = glm::normalize(glm::refract(ray.direction, normalVector, refractiveIndex));    // Get the direction of the internal ray
+        Ray refractedRay(ray.intersectPoint, insideRayDirection);   // Create the internal ray
+        refractedRay.closestPt(sceneObjects);   // Find the point where the internal ray hits the object wall
+
+        glm::vec3 otherSideNormal = sceneObjects[ray.intersectIndex]->normal(refractedRay.intersectPoint);
+        glm::vec3 outsideRayDirection = glm::refract(insideRayDirection, -otherSideNormal, 1.0f/refractiveIndex);
+
+        Ray outsideRay = Ray(refractedRay.intersectPoint, outsideRayDirection);
+
+        colourSum += trace(outsideRay, step+1);
+
+
+    }
+
+    if (sceneObjects[objectId]->isTransparent() && step < MAX_STEPS) {
+        Ray refractedRay(ray.intersectPoint, ray.direction);
+        refractedRay.closestPt(sceneObjects);
+
+
+        if (ray.intersectIndex == refractedRay.intersectIndex) {
+            Ray outsideRay = Ray(refractedRay.intersectPoint, refractedRay.direction);
+
+            colourSum += trace(outsideRay, step + 1);
+        } else {
+            // Edge case where no inside ray
+            colourSum += trace(refractedRay, step + 1);
+        }
     }
     return colourSum;
 }
@@ -211,7 +242,7 @@ void display()
                 cellColour = getStandardColour(xp, yp, step, eye); // Perform basic ray tracing
             }
 
-            /* Draw the Quad */
+            /** Draw the Quad */
             glColor3f(cellColour.r, cellColour.g, cellColour.b);
             glVertex2f(xp, yp);				//Draw each cell with its color value
             glVertex2f(xp+cellX, yp);
@@ -228,8 +259,8 @@ void display()
  * Populates the lightSources vector with light source points
  */
 void insertLightSources() {
-    glm::vec3 light1(5.0, 15.0, 5.0); // Behind camera
-    glm::vec3 light2(-100, 5, -300); // In front to left
+    glm::vec3 light1(50, 100, 200); // Behind camera
+    glm::vec3 light2(-150, 100, -100); // In front to left
 
     lightSources.push_back(light1);
     lightSources.push_back(light2);
@@ -241,24 +272,52 @@ void insertLightSources() {
 void insertObjects() {
 
     //-- Create a pointer to a sphere object
-    Sphere *sphere1 = new Sphere(glm::vec3(-10.0, 0.0, 50.0), 10.0, glm::vec3(0, 0, 1));
-    Sphere *sphere2 = new Sphere(glm::vec3(-10.0, 0.0, -50.0), 5.0, glm::vec3(0, 1, 0));
-    Sphere *sphere3 = new Sphere(glm::vec3(0.0, -5.0, -70.0), 3.0, glm::vec3(1, 0, 0));
-    Plane *plane = new Plane (glm::vec3(-1000.0, -10.0, -40.0),    //Point A
-                              glm::vec3(1000.0, -10.0, -40.0),     //Point B
+    Sphere *sphere1 = new Sphere(glm::vec3(30.0, 0.0, 50.0), 10.0, glm::vec3(0, 0, 1));
+
+    Sphere *refractiveSphere = new Sphere(glm::vec3(-3.0, -2.0, -30.0), 1.0, glm::vec3(0.01, 0.01, 0.01));
+
+    Sphere *reflectiveSphere = new Sphere(glm::vec3(0.5, -3.0, -100.0), 7, (glm::vec3(20.0, 67.0, 55.0) / 255.0f));
+
+    Sphere *transparentSphere = new Sphere(glm::vec3(-3.0, 3.0, -40.0), 2.0, glm::vec3(0.0, 0.0, 0.0));
+
+    Sphere *reflectAndRefractSphere = new Sphere(glm::vec3(-6.0, -4.0, -40), 2.0, glm::vec3(0.01, 0.01, 0.01));
+
+    Plane *plane = new Plane (glm::vec3(-1000.0, -10.0, 100.0),    //Point A
+                              glm::vec3(1000.0, -10.0, 100.0),     //Point B
                               glm::vec3(1000.0, -10.0, -200.0),    //Point C
                               glm::vec3(-1000.0, -10.0, -200.0),   //Point D
-                              glm::vec3(0.5, 0.5, 0.5));      //Colour
+                              glm::vec3(1.0, 1.0, 1.0));      //Colour
 
-    sphere3->setReflective();
-    plane->setReflective();
+    Plane *backDrop = new Plane (glm::vec3(-500.0, 500.0, -200),
+                                 glm::vec3(-500.0, -10.0, -200),
+                                 glm::vec3(500.0, -10.0, -200),
+                                 glm::vec3(500.0, 500.0, -200),
+                                 glm::vec3(0.0, 0.0, 0.0));
+
+    char pathName[100] = "texture-storage/gas-giant.bmp";
+    char* pathLocation = pathName;
+    TextureBMP gasGiant = TextureBMP(pathLocation);
+    gasGiant.getColorAt(0.5, 0.1);
+
+    refractiveSphere->setRefractive(0.8);
+    //refractiveSphere->setTransparent();
+    reflectiveSphere->setReflective(0.3);
+    transparentSphere->setTransparent();
+    reflectAndRefractSphere->setReflective(0.8);
+    //reflectAndRefractSphere->setTransparent();
+
+    plane->setReflective(0.4);
     plane->setProcedural();
+
 
     //--Add the above to the list of scene objects. (.push_back is the same as append)
     sceneObjects.push_back(sphere1);
-    sceneObjects.push_back(sphere2);
-    sceneObjects.push_back(sphere3);
+    sceneObjects.push_back(refractiveSphere);
+    sceneObjects.push_back(reflectiveSphere);
+    sceneObjects.push_back(transparentSphere);
+   // sceneObjects.push_back(reflectAndRefractSphere);
     sceneObjects.push_back(plane);
+    sceneObjects.push_back(backDrop);
 }
 
 

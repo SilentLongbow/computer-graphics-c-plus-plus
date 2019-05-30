@@ -23,6 +23,9 @@ protected:
 	bool refractive = false;
 	bool transparent = false;
 	bool procedural = false;
+
+	float reflectiveFactor;
+	float refractiveIndex;
 public:
 	SceneObject() {}
     virtual float intersect(glm::vec3 pos, glm::vec3 dir) = 0;
@@ -34,11 +37,15 @@ public:
 	// Getters and setters for the Object's reflective and refractive properties
 	bool isReflective();
 
-	void setReflective();
+	void setReflective(float factor);
+
+    float getReflectiveFactor();
 
 	bool isRefractive();
 
-    void setRefractive();
+    void setRefractive(float index);
+
+    float getRefractiveIndex();
 
 	bool isTransparent();
 

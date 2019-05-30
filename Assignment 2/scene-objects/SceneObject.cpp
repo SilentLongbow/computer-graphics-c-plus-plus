@@ -29,8 +29,13 @@ bool SceneObject::isReflective() {
 /**
  * Sets the reflective property of the object to true
  */
-void SceneObject::setReflective() {
+void SceneObject::setReflective(float factor) {
     reflective = true;
+    reflectiveFactor = factor;
+}
+
+float SceneObject::getReflectiveFactor() {
+    return reflectiveFactor;
 }
 
 /**
@@ -43,8 +48,13 @@ bool SceneObject::isRefractive() {
 /**
  * Sets the refractive property of the object to true
  */
-void SceneObject::setRefractive() {
+void SceneObject::setRefractive(float index) {
     refractive = true;
+    refractiveIndex = index;
+}
+
+float SceneObject::getRefractiveIndex() {
+    return refractiveIndex;
 }
 
 /**
