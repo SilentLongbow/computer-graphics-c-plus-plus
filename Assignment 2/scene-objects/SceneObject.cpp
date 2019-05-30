@@ -18,3 +18,45 @@ void SceneObject::setColor(glm::vec3 col)
 {
 	color = col;
 }
+
+/**
+ * Returns the reflective property of the object
+ */
+bool SceneObject::isReflective() {
+    return reflective;
+}
+
+/**
+ * Sets the reflective property of the object to true
+ */
+void SceneObject::setReflective() {
+    reflective = true;
+}
+
+/**
+ * Returns the refractive property of the object
+ */
+bool SceneObject::isRefractive() {
+    return refractive;
+}
+
+/**
+ * Sets the refractive property of the object to true
+ */
+void SceneObject::setRefractive() {
+    refractive = true;
+}
+
+/**
+ * Returns the transparent property of the object
+ */
+bool SceneObject::isTransparent() {
+    return transparent;
+}
+
+/**
+ * Sets the transparent property of the object to true
+ */
+void SceneObject::setTransparent() {
+    transparent = true;
+}
