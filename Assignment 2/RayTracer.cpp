@@ -91,7 +91,7 @@ glm::vec3 trace(Ray ray, int step)
 
         /* Following code was based off the code given on  http://math.hws.edu/ */
 
-        float scale = 50;
+        float scale = 25;
         float a = floor((0.5 + atan2(normalVector.z, normalVector.x) / (2.0 * M_PI)) * scale);
         float b = floor((0.5 - asin(normalVector.y) / M_PI) * scale);
 
@@ -370,7 +370,7 @@ void insertObjects() {
 
     Sphere *reflectAndRefractSphere = new Sphere(glm::vec3(-6.0, -4.0, -40), 2.0, glm::vec3(0.01, 0.01, 0.01));
 
-    Sphere *proceduralSphere = new Sphere(glm::vec3(-2.0, 0.0, -80), 3.0, glm::vec3(.5));
+    Sphere *proceduralSphere = new Sphere(glm::vec3(-13.0, 2.0, -80), 3.0, glm::vec3(.5));
 
     Plane *plane = new Plane (glm::vec3(-1000.0, -10.0, 100.0),    //Point A
                               glm::vec3(1000.0, -10.0, 100.0),     //Point B
@@ -406,6 +406,7 @@ void insertObjects() {
     plane->setProceduralPlane();
 
     proceduralSphere->setProceduralSphere();
+    proceduralSphere->setReflective(0.3);
 
 
     //--Add the above to the list of scene objects. (.push_back is the same as append)
