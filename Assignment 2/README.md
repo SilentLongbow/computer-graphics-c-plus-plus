@@ -4,8 +4,11 @@ Procedural checkered texture equation attained from section 7.3.3 of the followi
 Gas-Giant texture was attained from https://www.deviantart.com/enderion/art/Gas-Giant-Stock-Texture-174826604.
     - The creater of the texture explicitly states for anyone to "use it however you want"
 
-Cube intersection equation attained from:
-    - https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersectionhttps://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
-
-Cube normal equation attained from:
-    - https://blog.johnnovak.net/2016/10/22/the-nim-raytracer-project-part-4-calculating-box-normals/
+Sphere texture equation clarified from the following stack overflow article:
+    - https://stackoverflow.com/questions/22420778/texture-mapping-in-a-ray-tracing-for-sphere-in-c
+  
+Procedural Sphere rendering:
+    - https://github.com/mortennobel/Unknown-Continents-2.0/wiki/Procedural-spheres-and-UV-Mapping
+    
+Cylinder:
+    - http://woo4.me/wootracer/cylinder-intersection/

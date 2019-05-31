@@ -8,7 +8,7 @@ add_executable(Assignment2.out
         scene-objects/SceneObject.cpp
         scene-objects/Sphere.cpp
         scene-objects/Plane.cpp
-        texture-loading/TextureBMP.cpp)
+        texture-loading/TextureBMP.cpp scene-objects/Cylinder.h scene-objects/Cylinder.cpp)
 
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)

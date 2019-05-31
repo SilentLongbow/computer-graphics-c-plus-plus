@@ -31,11 +31,11 @@ const float XMAX =  WIDTH * 0.5;
 const float YMIN = -HEIGHT * 0.5;
 const float YMAX =  HEIGHT * 0.5;
 
+float cameraHeight = 0;
+
 vector<SceneObject*> sceneObjects;  //A global list containing pointers to objects in the scene
 
 vector<glm::vec3> lightSources; // List of all light sources in the scene
-
-vector<TextureBMP> sceneTextures; // List of all textures to be used
 
 bool superSampling = false;
 
@@ -69,15 +69,16 @@ glm::vec3 trace(Ray ray, int step)
 
     glm::vec3 materialCol;
 
+    glm::vec3 normalVector = sceneObjects[objectId]->normal(ray.intersectPoint); // Get object that ray intersects with and get normal of object at point of intersection
 
     /* If the scene object has a procedural property, perform procedural texture generation */
-    if (sceneObjects[objectId]->isProcedural() && step < MAX_STEPS) {
+    if (sceneObjects[objectId]->isProceduralPlane() && step < MAX_STEPS) {
 
         /* Following code was based off the code given on  http://math.hws.edu/ */
         float scale = 0.1;
         float a = floor(ray.intersectPoint.x * scale);
         float b = floor(ray.intersectPoint.z * scale);
-        if (glm::mod(a+b, 2.0f) < 0.5) {  // a+b is odd
+        if (glm::mod(a+b, 2.0f) > 0.5) {  // a+b is odd
             materialCol = glm::vec3(.2, .2, .2);// / 255.0f; // Black
         }
         else {  // a+b is even
@@ -86,10 +87,22 @@ glm::vec3 trace(Ray ray, int step)
 
 
 
+    } else if (sceneObjects[objectId]->isProceduralSphere() && step < MAX_STEPS) {
+
+        /* Following code was based off the code given on  http://math.hws.edu/ */
+
+        float scale = 50;
+        float a = floor((0.5 + atan2(normalVector.z, normalVector.x) / (2.0 * M_PI)) * scale);
+        float b = floor((0.5 - asin(normalVector.y) / M_PI) * scale);
+
+        if (glm::mod(b, 2.0f) > 0.5) {
+            materialCol = glm::vec3(255.0, 223.0, 0.0) / 255.0f; // Black
+        } else {
+            materialCol = glm::vec3(.2);
+        }
     } else {
         materialCol = sceneObjects[objectId]->getColor(); //else return object's colour
     }
-    glm::vec3 normalVector = sceneObjects[objectId]->normal(ray.intersectPoint); // Get object that ray intersects with and get normal of object at point of intersection
 
 
     // Total colour of the quad
@@ -121,6 +134,15 @@ glm::vec3 trace(Ray ray, int step)
             colourSum += (ambientColour * materialCol) + (lDotn * materialCol) + specularColour;
         }
     }
+
+
+
+    if (sceneObjects[objectId]->isTextured()) {
+        float horizontalUnit = 0.5 + atan2(normalVector.z, normalVector.x) / (2 * M_PI);
+        float verticalUnit = 0.5 - asin(normalVector.y) / M_PI;
+        colourSum += sceneObjects[objectId]->getTexture().getColorAt(horizontalUnit, verticalUnit);
+    }
+
     if (sceneObjects[objectId]->isReflective() && step < MAX_STEPS) {
         float factor = sceneObjects[objectId]->getReflectiveFactor();
         glm::vec3 reflectedDirection = glm::reflect(ray.direction, normalVector);     // Get the direction of the reflected ray
@@ -143,7 +165,6 @@ glm::vec3 trace(Ray ray, int step)
 
         colourSum += trace(outsideRay, step+1);
 
-
     }
 
     if (sceneObjects[objectId]->isTransparent() && step < MAX_STEPS) {
@@ -160,6 +181,7 @@ glm::vec3 trace(Ray ray, int step)
             colourSum += trace(refractedRay, step + 1);
         }
     }
+
     return colourSum;
 }
 
@@ -217,7 +239,7 @@ void display()
     float cellX = (XMAX-XMIN)/NUMDIV;  //cell width
     float cellY = (YMAX-YMIN)/NUMDIV;  //cell height
 
-    glm::vec3 eye(0., 0., 0.);  //The eye position (source of primary rays) is the origin
+    glm::vec3 eye(0., cameraHeight, 0.);  //The eye position (source of primary rays) is the origin
 
     glClear(GL_COLOR_BUFFER_BIT);
     glMatrixMode(GL_MODELVIEW);
@@ -266,6 +288,72 @@ void insertLightSources() {
     lightSources.push_back(light2);
 }
 
+vector<Plane*> createBox(glm::vec3 centre, float height, float width, float depth, glm::vec3 colour) {
+    vector<Plane*> boxPlanes;
+
+    glm::vec3 backLeftTop = glm::vec3(centre.x - (width / 2), centre.y + (height / 2), centre.z - (depth / 2));
+    glm::vec3 backRightTop = glm::vec3(centre.x + (width / 2), centre.y + (height / 2), centre.z - (depth / 2));
+    glm::vec3 frontLeftTop = glm::vec3(centre.x - (width / 2), centre.y + (height / 2), centre.z + (depth / 2));
+    glm::vec3 frontRightTop = glm::vec3(centre.x + (width / 2), centre.y + (height / 2), centre.z + (depth / 2));
+
+    glm::vec3 backLeftBottom = glm::vec3(centre.x - (width / 2), centre.y - (height / 2), centre.z - (depth / 2));
+    glm::vec3 backRightBottom = glm::vec3(centre.x + (width / 2), centre.y - (height / 2), centre.z - (depth / 2));
+    glm::vec3 frontLeftBottom = glm::vec3(centre.x - (width / 2), centre.y - (height / 2), centre.z + (depth / 2));
+    glm::vec3 frontRightBottom = glm::vec3(centre.x + (width / 2), centre.y - (height / 2), centre.z + (depth / 2));
+
+    Plane *leftHandSide = new Plane(backLeftTop,
+                                    backLeftBottom,
+                                    frontLeftBottom,
+                                    frontLeftTop,
+                                    colour);
+
+    Plane *rightHandSide = new Plane(frontRightTop,
+                                     frontRightBottom,
+                                     backRightBottom,
+                                     backRightTop,
+                                     colour);
+
+    Plane *front = new Plane(frontLeftTop,
+                             frontLeftBottom,
+                             frontRightBottom,
+                             frontRightTop,
+                             colour);
+
+    Plane *topSide = new Plane(backLeftTop,
+                               frontLeftTop,
+                               frontRightTop,
+                               backRightTop,
+                               colour);
+
+    Plane *bottomSide = new Plane(backLeftBottom,
+                                  frontLeftBottom,
+                                  frontRightBottom,
+                                  backRightBottom,
+                                  colour);
+
+    Plane *backSide = new Plane(backRightTop,
+                                backRightBottom,
+                                backLeftBottom,
+                                backLeftTop,
+                                colour);
+
+
+    boxPlanes.push_back(front);
+    boxPlanes.push_back(topSide);
+    boxPlanes.push_back(rightHandSide);
+    boxPlanes.push_back(leftHandSide);
+    boxPlanes.push_back(bottomSide);
+    boxPlanes.push_back(backSide);
+
+    return boxPlanes;
+}
+
+TextureBMP setTexture(char pathname[100]) {
+    char* pathLocation = pathname;
+    TextureBMP texture = TextureBMP(pathLocation);
+    return texture;
+}
+
 /**
  * Populates the sceneObjects vector with scene objects.
  */
@@ -282,6 +370,8 @@ void insertObjects() {
 
     Sphere *reflectAndRefractSphere = new Sphere(glm::vec3(-6.0, -4.0, -40), 2.0, glm::vec3(0.01, 0.01, 0.01));
 
+    Sphere *proceduralSphere = new Sphere(glm::vec3(-2.0, 0.0, -80), 3.0, glm::vec3(.5));
+
     Plane *plane = new Plane (glm::vec3(-1000.0, -10.0, 100.0),    //Point A
                               glm::vec3(1000.0, -10.0, 100.0),     //Point B
                               glm::vec3(1000.0, -10.0, -200.0),    //Point C
@@ -295,41 +385,15 @@ void insertObjects() {
                                  glm::vec3(0.0, 0.0, 0.0));
 
 
-    glm::vec3 topBackLeft(10.0, -3.0, -50.0);
-    glm::vec3 topBackRight(12.0, -3.0, -50.0);
-    glm::vec3 topFrontLeft(10.0, -3.0, -48.0);
-    glm::vec3 topFrontRight(12.0, -3.0 ,-48.0);
+    vector<Plane*> tallBox = createBox(glm::vec3(10, -10, -50), 1000000.0, 3.0, 7.0, glm::vec3(1, 0.5, 0));
 
-    glm::vec3 bottomBackLeft(10.0, -6.0, -50.0);
-    glm::vec3 bottomBackRight(12.0, -6.0, -50.0);
-    glm::vec3 bottomFrontLeft(10.0, -6.0, -48.0);
-    glm::vec3 bottomFrontRight(12.0, -6.0, -48.0);
-
-
-    Plane *boxLeft = new Plane(topBackLeft,
-                                bottomBackLeft,
-                                bottomFrontLeft,
-                                topFrontLeft,
-                                glm::vec3(1.0, 0.5, 0.0));
-
-    Plane *boxFront = new Plane(topFrontLeft,
-                                bottomFrontLeft,
-                                bottomFrontRight,
-                                topFrontRight,
-                                glm::vec3(1.0, 0.5, 0.0));
-
-    Plane *boxTop = new Plane(topBackLeft,
-                                topFrontLeft,
-                                topFrontRight,
-                                topBackRight,
-                                glm::vec3(1.0, 0.5, 0.0));
-
-
+    Sphere *gasGiant = new Sphere(glm::vec3(10.0, 14.0, -100.0), 3, glm::vec3(0.));
 
     char pathName[100] = "texture-storage/gas-giant.bmp";
-    char* pathLocation = pathName;
-    TextureBMP gasGiant = TextureBMP(pathLocation);
-    gasGiant.getColorAt(0.5, 0.1);
+    gasGiant->setTextured(setTexture(pathName));
+
+
+
 
     refractiveSphere->setRefractive(0.8);
     //refractiveSphere->setTransparent();
@@ -339,7 +403,9 @@ void insertObjects() {
     //reflectAndRefractSphere->setTransparent();
 
     plane->setReflective(0.4);
-    plane->setProcedural();
+    plane->setProceduralPlane();
+
+    proceduralSphere->setProceduralSphere();
 
 
     //--Add the above to the list of scene objects. (.push_back is the same as append)
@@ -347,13 +413,21 @@ void insertObjects() {
     sceneObjects.push_back(refractiveSphere);
     sceneObjects.push_back(reflectiveSphere);
     sceneObjects.push_back(transparentSphere);
-   // sceneObjects.push_back(reflectAndRefractSphere);
+    // sceneObjects.push_back(reflectAndRefractSphere);
     sceneObjects.push_back(plane);
-    sceneObjects.push_back(backDrop);
+    //sceneObjects.push_back(backDrop);
 
-    sceneObjects.push_back(boxLeft);
-    sceneObjects.push_back(boxTop);
-    sceneObjects.push_back(boxFront);
+    sceneObjects.push_back(gasGiant);
+    sceneObjects.push_back(proceduralSphere);
+
+    for (int i = 0; i < tallBox.size(); i++) {
+        tallBox[i]->setReflective(0.2);
+        sceneObjects.push_back(tallBox[i]);
+    }
+
+
+
+
 
 }
 
@@ -391,6 +465,15 @@ void keyboardListener(unsigned char key, int x, int y) {
         superSamplingAmount = 4;
         keyPressed = true;
     }*/
+
+    if (key ==' ') {
+        cameraHeight += 5;
+        keyPressed = true;
+    }
+    if (key == 'c') {
+        cameraHeight -= 5;
+        keyPressed = true;
+    }
 
 
     if (keyPressed) {

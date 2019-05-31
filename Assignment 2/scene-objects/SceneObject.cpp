@@ -74,13 +74,36 @@ void SceneObject::setTransparent() {
 /**
  * Returns the procedural property of the object.
  */
-bool SceneObject::isProcedural() {
-    return procedural;
+bool SceneObject::isProceduralPlane() {
+    return proceduralPlane;
 }
 
 /**
  * Sets the procedural property of the object to true.
  */
-void SceneObject::setProcedural() {
-    procedural = true;
+void SceneObject::setProceduralPlane(){
+    proceduralPlane = true;
+    proceduralSphere = false;
+}
+
+bool SceneObject::isProceduralSphere() {
+    return proceduralSphere;
+}
+
+void SceneObject::setProceduralSphere() {
+    proceduralSphere = true;
+    proceduralPlane = false;
+}
+
+bool SceneObject::isTextured() {
+    return textured;
+}
+
+void SceneObject::setTextured(TextureBMP newTexture) {
+    textured = true;
+    texture = newTexture;
+}
+
+TextureBMP SceneObject::getTexture() {
+    return texture;
 }

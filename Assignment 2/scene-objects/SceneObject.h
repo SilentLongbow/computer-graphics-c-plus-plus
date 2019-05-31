@@ -13,6 +13,7 @@
 #define H_SOBJECT
 #include <glm/glm.hpp>
 #include <stdbool.h>
+#include "../texture-loading/TextureBMP.h"
 
 
 class SceneObject
@@ -22,7 +23,11 @@ protected:
 	bool reflective = false;
 	bool refractive = false;
 	bool transparent = false;
-	bool procedural = false;
+	bool proceduralPlane = false;
+	bool proceduralSphere = false;
+
+	bool textured = false;
+	TextureBMP texture;
 
 	float reflectiveFactor;
 	float refractiveIndex;
@@ -51,9 +56,19 @@ public:
 
 	void setTransparent();
 
-	bool isProcedural();
+	bool isProceduralPlane();
 
-	void setProcedural();
+	void setProceduralPlane();
+
+	bool isProceduralSphere();
+
+	void setProceduralSphere();
+
+	bool isTextured();
+
+	void setTextured(TextureBMP newTexture);
+
+	TextureBMP getTexture();
 };
 
 #endif
