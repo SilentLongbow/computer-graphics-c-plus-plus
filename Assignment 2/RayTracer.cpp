@@ -24,7 +24,7 @@ using namespace std;
 const float WIDTH = 20.0;
 const float HEIGHT = 20.0;
 const float EDIST = 40.0;
-const int NUMDIV = 800;
+const int NUMDIV = 1000;
 const int MAX_STEPS = 5;
 const float XMIN = -WIDTH * 0.5;
 const float XMAX =  WIDTH * 0.5;
@@ -294,6 +294,38 @@ void insertObjects() {
                                  glm::vec3(500.0, 500.0, -200),
                                  glm::vec3(0.0, 0.0, 0.0));
 
+
+    glm::vec3 topBackLeft(10.0, -3.0, -50.0);
+    glm::vec3 topBackRight(12.0, -3.0, -50.0);
+    glm::vec3 topFrontLeft(10.0, -3.0, -48.0);
+    glm::vec3 topFrontRight(12.0, -3.0 ,-48.0);
+
+    glm::vec3 bottomBackLeft(10.0, -6.0, -50.0);
+    glm::vec3 bottomBackRight(12.0, -6.0, -50.0);
+    glm::vec3 bottomFrontLeft(10.0, -6.0, -48.0);
+    glm::vec3 bottomFrontRight(12.0, -6.0, -48.0);
+
+
+    Plane *boxLeft = new Plane(topBackLeft,
+                                bottomBackLeft,
+                                bottomFrontLeft,
+                                topFrontLeft,
+                                glm::vec3(1.0, 0.5, 0.0));
+
+    Plane *boxFront = new Plane(topFrontLeft,
+                                bottomFrontLeft,
+                                bottomFrontRight,
+                                topFrontRight,
+                                glm::vec3(1.0, 0.5, 0.0));
+
+    Plane *boxTop = new Plane(topBackLeft,
+                                topFrontLeft,
+                                topFrontRight,
+                                topBackRight,
+                                glm::vec3(1.0, 0.5, 0.0));
+
+
+
     char pathName[100] = "texture-storage/gas-giant.bmp";
     char* pathLocation = pathName;
     TextureBMP gasGiant = TextureBMP(pathLocation);
@@ -301,7 +333,7 @@ void insertObjects() {
 
     refractiveSphere->setRefractive(0.8);
     //refractiveSphere->setTransparent();
-    reflectiveSphere->setReflective(0.3);
+    reflectiveSphere->setReflective(0.6);
     transparentSphere->setTransparent();
     reflectAndRefractSphere->setReflective(0.8);
     //reflectAndRefractSphere->setTransparent();
@@ -318,6 +350,11 @@ void insertObjects() {
    // sceneObjects.push_back(reflectAndRefractSphere);
     sceneObjects.push_back(plane);
     sceneObjects.push_back(backDrop);
+
+    sceneObjects.push_back(boxLeft);
+    sceneObjects.push_back(boxTop);
+    sceneObjects.push_back(boxFront);
+
 }
 
 
@@ -366,7 +403,7 @@ void keyboardListener(unsigned char key, int x, int y) {
 int main(int argc, char *argv[]) {
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB );
-    glutInitWindowSize(800, 800);
+    glutInitWindowSize(1000, 1000);
     glutInitWindowPosition(400, 50);
     glutCreateWindow("Assignment 2");
 
